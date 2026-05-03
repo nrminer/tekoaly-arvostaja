@@ -1,0 +1,229 @@
+.font-heading {
+  font-family: "Space Grotesk", "Figtree", sans-serif;
+}
+
+/* ── Non-editable UI chrome ──────────────────────────────────
+ * On mobile, tapping any text element places a blinking caret
+ * because browsers default to text-selection on every block.
+ * Users perceive this as "I can type here", which is wrong for
+ * static content — only real <input>/<textarea> fields should
+ * accept a caret.
+ *
+ * Strategy: lock the whole document, then re-enable selection
+ * ONLY on form fields (and on `.allow-select` where we want an
+ * explicit opt-in for copy support). The "Copy" buttons in the
+ * report still work because they call `navigator.clipboard.writeText`
+ * with the original text — they don't depend on browser selection.
+ * ──────────────────────────────────────────────────────────── */
+/* Lock selection at the root — cheaper than a 20-selector cascade.
+ * Re-enable only for real form inputs. */
+#root {
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+}
+
+input,
+textarea,
+[contenteditable="true"],
+.allow-select,
+.allow-select * {
+  -webkit-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+  -webkit-touch-callout: default;
+}
+
+input,
+input *,
+textarea,
+textarea * {
+  -webkit-user-select: text !important;
+  -ms-user-select: text !important;
+  user-select: text !important;
+  -webkit-touch-callout: default;
+}
+
+label[for] {
+  cursor: default;
+}
+
+/* Account for the sticky site header when scrolling to anchor targets. */
+html {
+  scroll-padding-top: 4.5rem;
+}
+
+/* Hero gradient gets its own stacking context so it doesn't force a
+ * full-page composite layer invalidation when the sticky header repaints. */
+.hero-gradient {
+  isolation: isolate;
+}
+
+.brand-mark {
+  display: grid;
+  height: 42px;
+  width: 42px;
+  place-items: center;
+  border-radius: 14px;
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  box-shadow: var(--shadow-soft);
+}
+
+.soft-card,
+.score-summary-card {
+  border-color: hsl(var(--border));
+  background: hsl(var(--card));
+  box-shadow: var(--shadow-soft);
+}
+
+.soft-card [class*="p-6"],
+.score-summary-card [class*="p-6"] {
+  padding: clamp(1rem, 2vw, 1.5rem);
+}
+
+.analysis-card {
+  animation: report-in 320ms ease-out both;
+}
+
+.copy-notice {
+  display: inline-flex;
+  border-radius: 999px;
+  background: hsl(var(--accent));
+  color: hsl(var(--accent-foreground));
+  padding: 0.65rem 0.9rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.bullet-dot {
+  margin-top: 0.55rem;
+  height: 0.45rem;
+  width: 0.45rem;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: hsl(var(--primary));
+}
+
+.bullet-dot.warning {
+  background: hsl(var(--warning));
+}
+
+.score-ring-bg {
+  stroke: hsl(var(--muted));
+}
+
+.score-ring-progress {
+  stroke: hsl(var(--primary));
+  transition: stroke-dashoffset 500ms ease;
+}
+
+.file-dropzone {
+  min-height: 160px;
+  border: 1.5px dashed hsl(var(--border));
+  border-radius: 1.25rem;
+  background: hsl(var(--card));
+  transition: border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
+}
+
+@media (min-width: 640px) {
+  .file-dropzone {
+    min-height: 200px;
+  }
+}
+
+.file-dropzone.active,
+.file-dropzone:hover {
+  border-color: hsl(var(--primary));
+  background: hsl(var(--accent) / 0.45);
+  box-shadow: var(--shadow-soft);
+}
+
+.report-block {
+  border: 1px solid hsl(var(--border));
+  border-radius: 1rem;
+  background: hsl(var(--card));
+  padding: 1rem;
+  overflow-wrap: anywhere;
+}
+
+@supports (content-visibility: auto) {
+  .report-block {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 220px;
+  }
+}
+
+@keyframes report-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── Mobile improvements ── */
+
+/*
+ * iOS Safari zooms into any input/select/textarea with font-size < 16px.
+ * Force 16px on mobile so the viewport stays locked while typing.
+ */
+@media (max-width: 768px) {
+  input,
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
+
+/* Ensure interactive elements have large enough tap targets. */
+button,
+[role="button"],
+a {
+  touch-action: manipulation;
+}
+
+button,
+[role="button"] {
+  min-height: 44px;
+}
+
+@media (max-width: 639px) {
+  .report-block {
+    padding: 0.85rem;
+  }
+
+  .score-summary-card [data-radix-collection-item],
+  .soft-card,
+  .score-summary-card {
+    max-width: 100%;
+  }
+
+  /* Tighten card padding on very small screens */
+  .soft-card .card-content-inner,
+  .soft-card > div {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  /* Brand mark slightly smaller so nav doesn't crowd */
+  .brand-mark {
+    height: 36px;
+    width: 36px;
+    border-radius: 11px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .analysis-card,
+  .score-ring-progress,
+  .file-dropzone {
+    animation: none;
+    transition: none;
+  }
+}

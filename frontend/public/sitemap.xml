@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <url>
+    <loc>https://audio-diarizer-1.preview.emergentagent.com/</loc>
+    <xhtml:link rel="alternate" hreflang="fi" href="https://audio-diarizer-1.preview.emergentagent.com/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://audio-diarizer-1.preview.emergentagent.com/"/>
+    <lastmod>2025-04-30</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://audio-diarizer-1.preview.emergentagent.com/interview</loc>
+    <xhtml:link rel="alternate" hreflang="fi" href="https://audio-diarizer-1.preview.emergentagent.com/interview"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://audio-diarizer-1.preview.emergentagent.com/interview"/>
+    <lastmod>2026-05-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+</urlset>

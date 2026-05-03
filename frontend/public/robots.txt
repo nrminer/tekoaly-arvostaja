@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://tekoaly-arvostaja.vercel.app/sitemap.xml
