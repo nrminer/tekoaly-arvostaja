@@ -1,12 +1,16 @@
+@ -1,200 +1,146 @@
 # Tekoaly-arvostaja / CV Reviewer
+# CV Reviewer — AI-Powered CV Analysis & Mock Interview Practice
 
 A Finnish-first CV review and mock interview app. Users can upload a PDF/DOCX CV or paste CV text, receive structured AI feedback, and practice a mock interview based on the same CV context.
+A Finnish-first web application that reviews CVs with structured AI feedback and lets users practice job interviews with an AI interviewer. No account required. Nothing stored on the server.
 
 The product is intentionally minimal: one CV review flow, one mock interview flow, no account system, and no server-side CV storage.
 
 Suomenkielinen CV-arviointi- ja haastatteluharjoitussovellus. Käyttäjä voi ladata PDF- tai DOCX-muotoisen CV:n tai liittää CV:n tekstinä, saada rakenteisen tekoälypalautteen ja harjoitella haastattelua saman CV-kontekstin pohjalta.
 
 Tuote on tarkoituksella kevyt: yksi CV-arvioinnin virta, yksi haastatteluharjoituksen virta, ei käyttäjätilejä eikä CV:n tallennusta palvelimelle.
+**Live:** [tekoaly-arvostaja.vercel.app](https://tekoaly-arvostaja.vercel.app)
 
 ---
 
@@ -33,12 +37,55 @@ Tuote on tarkoituksella kevyt: yksi CV-arvioinnin virta, yksi haastatteluharjoit
 - Käyttöliittymä on suomenkielinen ja tämä valinta näkyy sovelluksessa selkeästi.
 - Käyttää yhteistä asetustiedostoa CV:n pituusrajalle ja haastattelun ajastimelle.
 - Ei tallenna CV:tä palvelimelle; sisältö käsitellään muistissa pyynnön aikana.
+## Features
+
+### CV Review
+- Upload a PDF or DOCX, or paste CV text directly
+- AI analysis across five dimensions: formatting, content, language, local market fit, and strategic positioning
+- Scored feedback with concrete strengths, improvement points, and rewrite suggestions
+- Market-specific notes for Finland, Nordics, US, EU, and more
+- Download the full report as a styled **HTML file** or a translated **JSON file** (Finnish field names)
+
+### Mock Interview Practice
+- Provide a CV summary (or carry it over directly from a CV review)
+- AI interviewer asks 6–8 tailored questions with rotating focus areas
+- Answer via text, voice dictation, or audio recording
+- Optional text-to-speech for interviewer questions
+- Optional local camera preview (video stays in the browser, never uploaded)
+- Per-question answer timer (60 / 90 / 120 seconds)
+- Final summary with STAR coaching, cultural fit notes, and next steps
+
+### General
+- Finnish UI, designed for the Finnish job market
+- Dark / light theme with system preference detection
+- Fully responsive, mobile-optimised
+- No account, no tracking, no server-side CV storage
+- Cloudflare Turnstile bot protection (optional)
+- Downloadable session reports
 
 ---
 
 ## High-level architecture
 
 ## Arkkitehtuuri yleisellä tasolla
+## Tech stack
+
+| Layer | Technology |
+|---|---|
+| Frontend | React 19, React Router 7 |
+| Styling | Tailwind CSS, shadcn/ui (Radix UI primitives) |
+| Icons | Lucide React |
+| Build | Create React App + CRACO (webpack overrides) |
+| HTTP client | Axios |
+| Backend | Python, FastAPI, Uvicorn |
+| AI | Anthropic Claude via Emergent AI gateway |
+| TTS | OpenAI TTS via Emergent AI gateway |
+| PDF extraction | pdfplumber + pypdf fallback |
+| DOCX extraction | python-docx |
+| Data validation | Pydantic |
+| Rate limiting | slowapi |
+| Bot protection | Cloudflare Turnstile |
+| Hosting | Vercel (frontend + serverless API) |
 
 ```text
 React frontend
@@ -56,28 +103,54 @@ FastAPI backend
   ├─ mock interview session memory
   ├─ TTS endpoint
   └─ security/rate-limit middleware
+---
 
 Serverless API mirror
   └─ api/ contains a deployment-compatible copy of the backend routes/services
+## Architecture
 
 Shared config
   └─ shared/app_config.json is used by both frontend and backend
 ```
+Browser
+  └─ React SPA
+       ├─ / → CV review form + report
+       └─ /interview → mock interview setup + chat
+
+Vercel serverless
+  └─ /api/* → Python FastAPI (api/ directory)
+       ├─ POST /api/review          CV review
+       ├─ POST /api/interview/start  Start session
+       ├─ POST /api/interview/turn   Send answer, get next question
+       ├─ POST /api/interview/finish End session, get summary
+       ├─ POST /api/interview/tts    Text-to-speech
+       └─ DELETE /api/interview/:id  Delete session
+
+External AI
+  └─ Emergent AI gateway → Anthropic Claude (review + interview)
+                         → OpenAI TTS (interviewer voice)
+```
 
 ---
+All CV text and interview answers are processed in-memory for the duration of the request. Nothing is written to a database.
 
 ## Full important-file structure
+---
 
 ## Tärkeimpien tiedostojen rakenne
+## Project structure
 
 ```text
+```
 .
 ├── README.md
 ├── PR_DESCRIPTION.md
 ├── vercel.json
+├── vercel.json               Vercel build config, headers, and rewrites
 ├── shared/
 │   └── app_config.json
 │       └─ Shared product config: CV minimum length, Finnish-only mode, timer defaults/options.
+│   └── app_config.json       Single source of truth for CV length limits and timer options
 │
 ├── frontend/
 │   ├── README.md
@@ -85,10 +158,12 @@ Shared config
 │   ├── craco.config.js
 │   │   └─ CRA/webpack customization, including @ and @app-config aliases.
 │   ├── jsconfig.json
+│   ├── craco.config.js       Webpack aliases (@/ → src, @app-config → shared config)
 │   ├── tailwind.config.js
 │   ├── postcss.config.js
 │   ├── public/
 │   │   ├── index.html
+│   │   ├── index.html        SEO meta, anti-FOUC theme script, non-blocking fonts
 │   │   ├── manifest.json
 │   │   ├── robots.txt
 │   │   └── sitemap.xml
@@ -105,15 +180,25 @@ Shared config
 │       │   └─ Finnish-only UI dictionary and translation helper.
 │       ├── lib/
 │       │   └── utils.js
+│       ├── index.js          Router setup, lazy-loaded InterviewPage
+│       ├── index.css         Tailwind entry, light + dark CSS variables, global styles
+│       ├── App.js            CV review page, HTML/JSON report download
+│       ├── App.css           Cards, animations, dropzone, mobile polish
+│       ├── i18n.js           Finnish UI dictionary and translation hook
 │       ├── hooks/
 │       │   ├── useInterviewerTTS.js
 │       │   │   └─ Calls backend TTS and manages audio playback.
 │       │   ├── useSpeechRecognition.js
 │       │   │   └─ Browser speech-recognition wrapper.
 │       │   └── use-toast.js
+│       │   ├── useTheme.js           Dark/light theme with localStorage persistence
+│       │   ├── useAudioRecorder.js   MediaRecorder wrapper with peak meter
+│       │   ├── useSpeechRecognition.js  Web Speech API wrapper (fi-FI / en-US)
+│       │   └── useInterviewerTTS.js  Backend TTS calls + audio playback
 │       ├── pages/
 │       │   └── InterviewPage.js
 │       │       └─ Mock interview setup, camera consent flow, timer config, chat integration.
+│       │   └── InterviewPage.js      Interview setup, session management, camera consent
 │       └── components/
 │           ├── FileDropzone.js
 │           ├── PrivacyPolicy.js
@@ -126,6 +211,17 @@ Shared config
 │           │   └── InterviewSummary.js
 │           └── ui/
 │               └─ shadcn/ui-style component wrappers built on Radix UI primitives.
+│           ├── FileDropzone.js       Drag-and-drop upload with success confirmation state
+│           ├── PrivacyPolicy.js      GDPR privacy notice dialog (Finnish + English)
+│           ├── ReportSection.js      Accordion-based CV feedback report
+│           ├── ScoreRing.js          SVG score ring component
+│           ├── SiteLayout.js         Sticky header, theme toggle, footer
+│           ├── Turnstile.js          Cloudflare Turnstile widget wrapper
+│           └── interview/
+│               ├── AudioAnswerPanel.js   Audio recording + upload panel
+│               ├── CameraConsentModal.js Camera permission dialog
+│               ├── InterviewChat.js      Transcript, textarea, voice/TTS controls
+│               └── InterviewSummary.js   End-of-session summary display
 │
 ├── backend/
 │   ├── requirements.txt
@@ -169,6 +265,14 @@ Shared config
 │       ├── test_turnstile.py
 │       ├── test_vibe_cleanup_contract.py
 │       └── test_vibe_cleanup_runtime.py
+├── backend/                  Local development FastAPI server
+│   ├── server.py             App entry point, all routes
+│   ├── cv_service.py         PDF/DOCX extraction, prompt building, Claude calls
+│   ├── interview_service.py  In-memory sessions, question rotation, TTS
+│   ├── cv_models.py          Pydantic response models for CV review
+│   ├── interview_models.py   Pydantic models for interview turns and summaries
+│   ├── security_*.py         Rate limiting, request validation, headers middleware
+│   └── tests/                Pytest suite (unit, integration, regression, pentest)
 │
 └── api/
     ├── app_config.py
@@ -184,6 +288,8 @@ Shared config
     ├── security_ip_intel.py
     ├── security_middleware.py
     └── security_turnstile.py
+└── api/                      Vercel serverless mirror of backend (kept in sync)
+    └── index.py              Serverless entry point
 ```
 
 ---
@@ -195,14 +301,11 @@ Shared config
 `shared/app_config.json` is the product-level source of truth used by both the frontend and backend.
 
 `shared/app_config.json` on tuotetason asetusten yhteinen lähde, jota sekä frontend että backend käyttävät.
+`shared/app_config.json` is read by both the frontend and backend. Change limits here only — never in individual files.
 
 ```json
 {
-  "cvMinChars": 120,
-  "languageMode": "finnish-only",
-  "defaultLanguage": "fi",
-  "interviewTimerSecondsDefault": 90,
-  "interviewTimerSecondsOptions": [60, 90, 120]
+@ -206,343 +152,141 @@ Shared config
 }
 ```
 
@@ -300,6 +403,18 @@ Tärkeimmät backend-päätepisteet:
 | `/api/interview/finish` | POST | Ends interview and returns final summary. |
 | `/api/interview/{session_id}` | DELETE | Deletes interview session. |
 | `/api/interview/tts` | POST | Generates interviewer speech audio. |
+| Endpoint | Method | Description |
+|---|---|---|
+| `/api/health` | GET | Service health, privacy mode, AI model label |
+| `/api/app-config` | GET | Runtime config (shared with frontend) |
+| `/api/options` | GET | Allowed seniority levels and markets |
+| `/api/review` | POST | CV review from file or text |
+| `/api/interview/extract-cv` | POST | Extract text from uploaded CV for interview prefill |
+| `/api/interview/start` | POST | Start a mock interview session |
+| `/api/interview/turn` | POST | Submit an answer, receive next question |
+| `/api/interview/finish` | POST | End session early, get final summary |
+| `/api/interview/{id}` | DELETE | Delete session (called on tab close) |
+| `/api/interview/tts` | POST | Generate interviewer audio |
 
 ---
 
@@ -383,12 +498,22 @@ Huomiot:
 - `frontend/src/components/ui/*` noudattaa shadcn/ui-tyylistä rakennetta Radix-primitiivien päällä.
 - Sovelluskohtaiset CV-promptit, suomenkieliset tekstit, haastattelun kysymyskiertoprofiilit, tietosuojalogiikka, testit ja asetteluratkaisut ovat projektin omaa koodia.
 - Osa riippuvuuksista tulee pohjaprojektista tai UI-komponenttisetistä; kaikki riippuvuudet eivät näy suoraan nykyisessä käyttäjävirrassa.
-
----
-
 ## Environment variables
 
+---
+### Backend / API
+
+## Environment variables
+| Variable | Required | Purpose |
+|---|---|---|
+| `EMERGENT_LLM_KEY` | Yes | LLM gateway key for CV review and interview |
+| `EMERGENT_LLM_KEY_FALLBACK` | No | Optional fallback key for CV review |
+| `TURNSTILE_SECRET_KEY` | No | Cloudflare Turnstile server-side secret |
+| `CORS_ORIGINS` | Recommended | Comma-separated allowed frontend origins |
+| `AUDIT_API_KEY` | No | Protects the audit endpoint if set |
+
 ## Ympäristömuuttujat
+### Frontend
 
 | Variable | Location | Required | Purpose |
 |---|---|---:|---|
@@ -399,6 +524,10 @@ Huomiot:
 | `AUDIT_API_KEY` | backend/API | No | Protects audit health endpoint if configured. |
 | `REACT_APP_BACKEND_URL` | frontend | Yes | Public backend base URL used by frontend API calls. |
 | `REACT_APP_TURNSTILE_SITE_KEY` | frontend | No | Cloudflare Turnstile site key. |
+| Variable | Required | Purpose |
+|---|---|---|
+| `REACT_APP_BACKEND_URL` | Yes | Backend base URL used by all API calls |
+| `REACT_APP_TURNSTILE_SITE_KEY` | No | Cloudflare Turnstile site key |
 
 ---
 
@@ -414,6 +543,7 @@ Huomiot:
 cd backend
 python -m venv .venv
 source .venv/bin/activate
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 uvicorn server:app --reload --port 8001
 ```
@@ -421,6 +551,7 @@ uvicorn server:app --reload --port 8001
 Minimum backend `.env`:
 
 Backendin vähimmäis-`.env`:
+Minimum `backend/.env`:
 
 ```env
 EMERGENT_LLM_KEY=your_key_here
@@ -445,11 +576,14 @@ AUDIT_API_KEY=optional_audit_key
 cd frontend
 yarn install
 yarn start
+npm install --legacy-peer-deps
+npm start
 ```
 
 Minimum frontend `.env`:
 
 Frontendin vähimmäis-`.env`:
+Minimum `frontend/.env`:
 
 ```env
 REACT_APP_BACKEND_URL=http://localhost:8001
@@ -458,25 +592,44 @@ REACT_APP_BACKEND_URL=http://localhost:8001
 Optional frontend `.env`:
 
 Valinnainen frontendin `.env`:
+---
 
 ```env
 REACT_APP_TURNSTILE_SITE_KEY=cloudflare_turnstile_site_key
 ```
+## Deployment
 
 ---
+The project is deployed on Vercel. The build command and API routing are defined in `vercel.json`.
 
 ## Testing and verification
+```json
+{
+  "buildCommand": "cd frontend && npm install --legacy-peer-deps && npm run build",
+  "outputDirectory": "frontend/build"
+}
+```
 
 ## Testaus ja varmistus
+The `api/` directory is automatically picked up by Vercel as Python serverless functions. Set all backend environment variables in the Vercel project dashboard.
 
 Useful focused checks:
+---
 
 Hyödylliset kohdennetut tarkistukset:
+## Running tests
 
 ```bash
 cd backend
+
+# Core contract and runtime checks
 pytest -q tests/test_vibe_cleanup_contract.py tests/test_vibe_cleanup_runtime.py
+
+# Interview and CV logic
 pytest -q tests/test_interview.py tests/test_interview_rotation_logic.py tests/test_cv_fallback_logic.py
+
+# Security hardening
+pytest -q tests/test_security_hardening.py tests/test_pentest.py
 ```
 
 Frontend build check:
@@ -495,6 +648,7 @@ Ajonaikaiset health check -tarkistukset:
 ```bash
 curl -s "$REACT_APP_BACKEND_URL/api/health"
 curl -s "$REACT_APP_BACKEND_URL/api/app-config"
+CI=true npm run build
 ```
 
 ---
@@ -508,6 +662,7 @@ curl -s "$REACT_APP_BACKEND_URL/api/app-config"
 - Camera preview is local to the browser.
 - TTS sends only interviewer prompt text to the speech endpoint.
 - `/api/health` reports:
+## Privacy
 
 - CV-sisältö käsitellään aktiivisen pyynnön aikana eikä sitä tallenneta tietokantaan.
 - Haastatteluistunnot ovat muistissa ja ne voidaan poistaa kutsulla `DELETE /api/interview/{session_id}`.
@@ -520,10 +675,17 @@ curl -s "$REACT_APP_BACKEND_URL/api/app-config"
   "privacy_mode": "no_server_storage"
 }
 ```
+- CV text and interview answers are processed in-memory for the active request only. Nothing is written to a database.
+- Interview sessions are held in process memory and deleted when the session ends or the user closes the tab.
+- Camera preview is local to the browser. Video is never uploaded.
+- TTS sends only the interviewer's question text to the speech endpoint.
+- `GET /api/health` confirms: `"privacy_mode": "no_server_storage"`
+- Full privacy notice: [tietosuoja@cvarvio.fi](mailto:tietosuoja@cvarvio.fi)
 
 ---
 
 ## Known maintenance notes
+## Maintenance notes
 
 ## Ylläpitohuomiot
 
@@ -536,6 +698,11 @@ curl -s "$REACT_APP_BACKEND_URL/api/app-config"
 - Jaetut rajat kannattaa muuttaa vain tiedostossa `shared/app_config.json`.
 - Käyttöliittymä on tuotepäätöksenä suomenkielinen; älä lisää piilotettuja kielivalintoja.
 - Tarkka toimiva tekoälyn varamalli on piilotettu käyttäjälle näkyvistä pinnoista; `/api/health` näyttää vain `adaptive-claude`.
+- `backend/` and `api/` mirror the same logic for local vs. Vercel serverless compatibility. Keep changes in sync between them.
+- All shared product limits (CV length, timer options) live only in `shared/app_config.json`.
+- The UI is intentionally Finnish-only. Language toggles are a no-op by product design.
+- The exact AI model in use is not exposed to users. `/api/health` returns only `"adaptive-claude"`.
+- Dark mode preference is stored in `localStorage` under key `cvarvio.theme`. The anti-FOUC script in `index.html` applies it before first paint.
 
 ---
 
@@ -546,3 +713,4 @@ curl -s "$REACT_APP_BACKEND_URL/api/app-config"
 MIT for project code, unless a specific file says otherwise. Third-party dependencies keep their own licenses; see each linked project above and the installed package metadata for full license terms.
 
 Projektin oma koodi on MIT-lisensoitu, ellei yksittäisessä tiedostossa toisin mainita. Kolmansien osapuolten riippuvuuksilla on omat lisenssinsä; katso yllä olevat linkit ja asennettujen pakettien lisenssitiedot.
+MIT for project code, unless a specific file states otherwise. Third-party dependencies retain their own licenses — see each package's repository for full terms.
