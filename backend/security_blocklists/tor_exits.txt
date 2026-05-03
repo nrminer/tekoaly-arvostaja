@@ -1,0 +1,30 @@
+# Seed Tor exit-node IPs (individual /32 addresses).
+#
+# This is a small static seed for unit tests + immediate coverage. The full
+# up-to-date Tor exit list (~1,000 IPs, refreshed every few minutes) is
+# maintained by the Tor Project at https://check.torproject.org/torbulkexitlist
+# — operators should configure `SECURITY_TOR_EXIT_PATH` to point at a daily
+# cron-refreshed copy.
+#
+# Format: one IP (or CIDR) per non-blank, non-# line.
+
+171.25.193.25
+185.220.101.1
+185.220.100.240
+185.220.100.241
+185.220.100.242
+185.220.100.243
+185.220.100.244
+185.220.100.245
+185.220.100.246
+185.220.100.247
+199.249.230.64
+199.249.230.65
+199.249.230.66
+199.249.230.67
+199.249.230.68
+104.244.72.115
+104.244.73.32
+104.244.74.32
+104.244.76.13
+104.244.78.16

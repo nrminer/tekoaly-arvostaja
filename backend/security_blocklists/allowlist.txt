@@ -1,0 +1,29 @@
+# VPN/proxy allowlist — egress ranges that look like VPNs to naïve detection
+# but are actually normal consumer privacy features shipped on-by-default by
+# major platforms. Blocking these would lock out ~all iPhone users on iCloud+
+# and every Cloudflare-1.1.1.1-with-WARP device.
+#
+# Matches here OVERRIDE matches in datacenters.txt and tor_exits.txt.
+#
+# Format: one CIDR per non-blank, non-# line.
+
+# -------- Apple Private Relay egress (iCloud+) --------
+# Sourced from Apple's public mask-api egress IP ranges CSV (partial seed).
+# Refresh operationally via the URL in the comments of security_ip_intel.py.
+172.224.224.0/24
+172.225.148.0/22
+172.225.156.0/23
+104.28.0.0/16
+
+# -------- Cloudflare WARP consumer egress (partial) --------
+162.158.0.0/15
+172.69.0.0/16
+141.101.64.0/18
+
+# -------- Loopback & private ranges (defensive: never block internal traffic) --------
+10.0.0.0/8
+172.16.0.0/12
+192.168.0.0/16
+127.0.0.0/8
+::1/128
+fc00::/7
